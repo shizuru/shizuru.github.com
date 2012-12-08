@@ -4,7 +4,7 @@ import Control.Arrow ((>>>))
 import Hakyll
 
 main :: IO ()
-main = hakyll $ do
+main = hakyllWith config $ do
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -20,3 +20,7 @@ main = hakyll $ do
         compile $ pageCompiler
             >>> applyTemplateCompiler "templates/default.html"
             >>> relativizeUrlsCompiler
+
+config :: HakyllConfiguration
+config = defaultHakyllConfiguration { deployCommand = deploy }
+  where deploy = "cp -r _site/* .. && ./site clean"
