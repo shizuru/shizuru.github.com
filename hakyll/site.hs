@@ -1,6 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Control.Arrow ((>>>))
-
 import Hakyll
 
 main :: IO ()
@@ -19,18 +17,18 @@ main = hakyllWith config $ do
     route $ gsubRoute "bootstrap/bootstrap/" (const "")
     compile copyFileCompiler
 
-  match (list ["index.html", "about.html", "member.html"]) $ do
+  match (fromList ["index.html", "about.html", "member.html"]) $ do
     route   idRoute
-    compile $ readPageCompiler
-      >>> applyTemplateCompiler "templates/default.html"
-      >>> relativizeUrlsCompiler
+    compile $ getResourceBody
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
+      >>= relativizeUrls
 
-  match (list ["code.markdown"]) $ do
+  match (fromList ["code.markdown"]) $ do
     route   $ setExtension "html"
-    compile $ pageCompiler
-      >>> applyTemplateCompiler "templates/default.html"
-      >>> relativizeUrlsCompiler
+    compile $ pandocCompiler
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
+      >>= relativizeUrls
 
-config :: HakyllConfiguration
-config = defaultHakyllConfiguration { deployCommand = deploy }
+config :: Configuration
+config = defaultConfiguration { deployCommand = deploy }
   where deploy = "cp -r _site/* .. && ./site clean"
