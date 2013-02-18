@@ -17,9 +17,10 @@ main = hakyllWith config $ do
     route $ gsubRoute "bootstrap/bootstrap/" (const "")
     compile copyFileCompiler
 
-  match (fromList ["index.html", "about.html", "member.html"]) $ do
-    route   idRoute
-    compile $ getResourceBody
+  match (fromList ["index.jade", "about.jade", "member.jade"]) $ do
+    route $ setExtension "html"
+    compile $ getResourceString
+      >>= withItemBody (unixFilter "bin/sjade" [])
       >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
