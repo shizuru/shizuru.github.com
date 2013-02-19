@@ -24,7 +24,7 @@ main = hakyllWith config $ do
       >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
-  match (fromList ["code.markdown"]) $ do
+  match (fromList ["code.markdown", "persistent.md"]) $ do
     route   $ setExtension "html"
     compile $ pandocCompiler
       >>= loadAndApplyTemplate "templates/default.html" defaultContext
