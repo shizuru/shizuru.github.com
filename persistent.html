@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="en" xmlns="http://www.w3.org/1999/xhtml" class="no-js"><head><title>Shizudevつくる会</title><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="stylesheet" href="css/bootstrap.min.css"><link rel="stylesheet" href="css/bootstrap-responsive.min.css"><script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script></head><body> <div class="navbar navbar-inverse"><div class="navbar-inner"><div class="container"><a href="index.html" class="brand">Shizudevつくる会</a><ul class="nav"><li><a href="about.html">About</a></li><li><a href="member.html">Member</a></li><li><a href="code.html">Code</a></li></ul></div></div></div><div class="container">
+<div class="span12">
+<h1 id="persistent入門">Persistent入門</h1>
+<p><a href="http://www.yesodweb.com/book/persistent">persistent</a>を単独で使えるようになるために、入門的な内容を書いてみます。</p>
+<p>インストールしたバージョンは以下の通り</p>
+<ul>
+<li>persistent-1.1.4</li>
+<li>persistent-sqlite-1.1.2</li>
+<li>persistent-template-1.1.2.1</li>
+</ul>
+<h2 id="install">Install</h2>
+<p>仮想環境で試します。</p>
+<pre><code>mkvhenv persistent
+cabal install persistent
+cabal install persistent-template
+cabal install persistent-sqlite</code></pre>
+<h2 id="使い方">使い方</h2>
+<p>まずは<a href="http://www.yesodweb.com/book/persistent">サンプル</a>を動かしてみる。</p>
+<pre><code>{-# LANGUAGE QuasiQuotes, TypeFamilies, GeneralizedNewtypeDeriving, TemplateHaskell,
+             OverloadedStrings, GADTs, FlexibleContexts #-}
+import Database.Persist
+import Database.Persist.TH
+import Database.Persist.Sqlite
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Resource (runResourceT)
+
+share [mkPersist sqlSettings, mkSave &quot;entityDefs&quot;] [persist|
+Person
+    name String
+    age Int
+    deriving Show
+|]
+
+main = runResourceT $ withSqliteConn &quot;:memory:&quot; $ runSqlConn $ do
+    runMigration $ migrate entityDefs (undefined :: Person) -- this line added: that's it!
+    michaelId &lt;- insert $ Person &quot;Michael&quot; 26
+    michael &lt;- get michaelId
+    liftIO $ print michael</code></pre>
+<p>言語拡張は<a href="http://d.hatena.ne.jp/rf0444/20120513/1336883141">Haskellの言語拡張たち / rfな日記</a>を参考に。</p>
+<h2 id="マイグレーションの秘密をさぐる">マイグレーションの秘密をさぐる</h2>
+<p>memoryじゃなくファイルに書き出します。</p>
+<pre><code>{-# LANGUAGE QuasiQuotes, TemplateHaskell, TypeFamilies, OverloadedStrings #-}
+{-# LANGUAGE GADTs, FlexibleContexts #-}
+import Database.Persist
+import Database.Persist.Sqlite
+import Database.Persist.TH
+import Control.Monad.IO.Class (liftIO)
+
+share [mkPersist sqlSettings, mkMigrate &quot;migrateAll&quot;] [persist|
+Person
+    name String
+    age Int Maybe
+    loc String default=&quot;Japan&quot;
+    deriving Show
+|]
+
+main :: IO ()
+main = withSqliteConn &quot;test.db&quot; $ runSqlConn $ do
+    runMigration migrateAll
+    johnId &lt;- insert $ Person &quot;kzfm&quot; (Just 20) &quot;Fuji&quot;
+    liftIO $ print johnId</code></pre>
+<p>続いてEntityを変更してみる。locを追加してdefaultも付けておく。ついでにinsertのとこも修正しておく</p>
+<pre><code>share [mkPersist sqlSettings, mkMigrate &quot;migrateAll&quot;] [persist|
+Person
+    name String
+    age Int Maybe
+    loc String default=&quot;Japan&quot;
+    deriving Show
+|]
+
+main :: IO ()
+main = withSqliteConn &quot;test.db&quot; $ runSqlConn $ do
+    runMigration migrateAll
+    johnId &lt;- insert $ Person &quot;kzfm&quot; (Just 20) &quot;Fuji&quot;
+    liftIO $ print johnId</code></pre>
+<p>実行したらdefaultは何をしているのか確かめる。続いてdefaultを設定しない場合にはmigrationに失敗することを確認する。</p>
+<ul>
+<li>フィールドのデータタイプが変更された時 。ただし変更できる時のみ</li>
+<li>(The datatype of a field changed. However, the database may object to this modification if the data cannot be translated.)</li>
+<li>フィールドが追加された時で、フィールドがnot nullの場合はdefaultが指定されている時</li>
+<li>(A field was added. However, if the field is not null, no default value is supplied (we’ll discuss defaults later) and there is already data in the database, the database will not allow this to happen.)</li>
+<li>フィールドがnot nullからnullに変更された時。逆のケースも試みるがデータベース次第</li>
+<li>(A field is converted from not null to null. In the opposite case, Persistent will attempt the conversion, contingent upon the database’s approval.)</li>
+<li>新しいエンティティが追加された時</li>
+<li>(A brand new entity is added.)</li>
+</ul>
+<h2 id="mongodbでもやってみたい">MongoDBでもやってみたい。</h2>
+<p>時間が余ったらMongoDBでもやってみる。</p>
+</div>
+</div>
+
+<footer><p>© Shizudevつくる会</p></footer><script src="js/bootstrap.min.js"></script><script src="js/script.js"></script></body></html>
