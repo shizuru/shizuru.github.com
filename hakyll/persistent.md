@@ -101,9 +101,18 @@ memoryじゃなくファイルに書き出します。
 - 新しいエンティティが追加された時
 - (A brand new entity is added.)
 
+## 関数
+
+insertとかそういうやつ
+
+- [Database.Persist の関数群を簡単に説明](http://qiita.com/items/2d57f7fe6296590faa80)
+
+
 ## MongoDBでもやってみたい。
 
 時間が余ったらMongoDBでもやってみる。
+
+- [MongoDB](http://d.hatena.ne.jp/rf0444/20120430/1335778852)
 
 </div>
 </div>
